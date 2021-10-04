@@ -1,5 +1,3 @@
-const CACHE_NAME = "static-cache-v2";
-const DATA_CACHE_NAME = "data-cache-v1";
 const FILES_TO_CACHE = [
   "/",
   "/index.html",
@@ -8,28 +6,25 @@ const FILES_TO_CACHE = [
   "/assets/index.js",
   "/assets/indexedDb.js",
 
-  "/dist/bundle.js",
-
   "/assets/icons/icon-192x192.png",
   "/assets/icons/icon-512x512.png",
   "https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css",
+  "https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/fonts/fontawesome-webfont.ttf?v=4.7.0",
   "https://cdn.jsdelivr.net/npm/chart.js@2.8.0",
 ];
+const CACHE_NAME = "static-cache-v2";
+const DATA_CACHE_NAME = "data-cache-v1";
 
 // install
 self.addEventListener("install", function (evt) {
-  // pre cache image data
-  evt.waitUntil(
-    caches.open(DATA_CACHE_NAME).then((cache) => cache.add("/api/transaction"))
-  );
-
   // pre cache all static assets
   evt.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(FILES_TO_CACHE))
+    caches.open(CACHE_NAME).then((cache) => {
+      console.log("your files were pre-cached successfully!");
+      return cache.addAll(FILES_TO_CACHE);
+    })
   );
-  console.log("Install");
-  // tell the browser to activate this service worker immediately once it
-  // has finished installing
+
   self.skipWaiting();
 });
 
@@ -53,6 +48,7 @@ self.addEventListener("activate", function (evt) {
 
 // fetch
 self.addEventListener("fetch", function (evt) {
+  // cache successful requests to the API
   if (evt.request.url.includes("/api/")) {
     evt.respondWith(
       caches
@@ -79,10 +75,8 @@ self.addEventListener("fetch", function (evt) {
   }
 
   evt.respondWith(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.match(evt.request).then((response) => {
-        return response || fetch(evt.request);
-      });
+    caches.match(evt.request).then(function (response) {
+      return response || fetch(evt.request);
     })
   );
 });
